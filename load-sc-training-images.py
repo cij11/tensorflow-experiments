@@ -17,14 +17,9 @@ from six.moves import cPickle as pickle
 image_size = 64
 pixel_depth = 255.0
 
-image_folder = './training-data/teal-marine-wandering/'
-image_file = 'desktop_055353_as.png'
-
-file_path = os.path.join(image_folder, image_file)
-
-print(file_path)
-
-
+image_folder_teal = './training-data/teal-marine-wandering/'
+image_folder_red = './training-data/red-marine-wandering/'
+image_folder_dirt = './training-data/badlands-dirt/'
 
 def load_image_folder(folder_path):
     image_files = os.listdir(folder_path)
@@ -51,13 +46,13 @@ def load_single_image(image_path):
     return image_data
 
 
-dataset = load_image_folder(image_folder)
+dataset = load_image_folder(image_folder_red)
 
 def render_image_ascii(image_data):
     for i in range (0, 64):
         line = ''
         for j in range (0, 64):
-            if (image_data[i][j][1] > 0.15):
+            if (image_data[i][j][0] > 0.15):
                 line = line + ('/')
             elif (image_data[i][j][1] < -0.45):
                 line = line + '#'
@@ -68,9 +63,3 @@ def render_image_ascii(image_data):
 for i in range(25, 45):
     render_image_ascii(dataset[i])
     print(" ")
-#print(image_filenames)
-
-image_data = load_single_image(file_path)
-
-print(image_data.shape)
-#print(image_data)
