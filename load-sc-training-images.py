@@ -28,30 +28,49 @@ print(file_path)
 
 def load_image_folder(folder_path):
     image_files = os.listdir(folder_path)
-    return image_files
+    dataset = np.ndarray(shape=(len(image_files), image_size, image_size, 3),
+                             dtype=np.float32)
+
+    num_images = 0
+    for image_filename in image_files:
+        image_path = os.path.join(folder_path, image_filename)
+        print(image_path)
+        image_data = load_single_image(image_path)
+        if image_data.shape != (image_size, image_size,3):
+            raise Exception('Unexpected image shape: %s' % str(image_data.shape))
+        dataset[num_images, :, :, :] = image_data
+        num_images = num_images + 1
+
+    #Cull dataset size down to those successfully load_image_folder
+    dataset = dataset[0:num_images, :, :, :]
+    return dataset
 
 def load_single_image(image_path):
-    image_data = (ndimage.imread(file_path, False, 'RGB').astype(float) -
+    image_data = (ndimage.imread(image_path, False, 'RGB').astype(float) -
               pixel_depth / 2) / pixel_depth
     return image_data
 
 
-image_filenames = load_image_folder(image_folder)
+dataset = load_image_folder(image_folder)
 
-print(image_filenames)
+def render_image_ascii(image_data):
+    for i in range (0, 64):
+        line = ''
+        for j in range (0, 64):
+            if (image_data[i][j][1] > 0.15):
+                line = line + ('/')
+            elif (image_data[i][j][1] < -0.45):
+                line = line + '#'
+            else:
+                line = line + '.'
+        print(line)
+
+for i in range(25, 45):
+    render_image_ascii(dataset[i])
+    print(" ")
+#print(image_filenames)
 
 image_data = load_single_image(file_path)
 
 print(image_data.shape)
-print(image_data)
-
-for i in range (0, 64):
-    line = ''
-    for j in range (0, 64):
-        if (image_data[i][j][1] > 0.15):
-            line = line + ('/')
-        elif (image_data[i][j][1] < -0.45):
-            line = line + '#'
-        else:
-            line = line + '.'
-    print(line)
+#print(image_data)
