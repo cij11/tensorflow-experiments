@@ -1,2 +1,2 @@
-notMNIST.pickle
+*.pickle
 training-data/
