@@ -13,6 +13,7 @@ from scipy import ndimage
 from sklearn.linear_model import LogisticRegression
 from six.moves.urllib.request import urlretrieve
 from six.moves import cPickle as pickle
+import random
 
 image_size = 64
 pixel_depth = 255.0
@@ -24,77 +25,77 @@ num_test_per_set = 100
 data_root = '.'
 
 image_folder_teal = './training-data/teal-marine-wandering/'
-image_folder_red = './training-data/red-marine-wandering/'
 image_folder_dirt = './training-data/badlands-dirt/'
 
-def load_image_folder(folder_path):
+def load_image_folder(folder_path, white):
     image_files = os.listdir(folder_path)
-    dataset = np.ndarray(shape=(len(image_files), image_size, image_size, 3),
+    dataset = np.ndarray(shape=(len(image_files), image_size, image_size),
                              dtype=np.float32)
 
     num_images = 0
     for image_filename in image_files:
         image_path = os.path.join(folder_path, image_filename)
         print(image_path)
-        image_data = load_single_image(image_path)
-        if image_data.shape != (image_size, image_size,3):
+        image_data = load_single_image(image_path, white)
+        if image_data.shape != (image_size, image_size):
             raise Exception('Unexpected image shape: %s' % str(image_data.shape))
-        dataset[num_images, :, :, :] = image_data
+        dataset[num_images, :, :] = image_data
         num_images = num_images + 1
 
     #Cull dataset size down to those successfully load_image_folder
-    dataset = dataset[0:num_images, :, :, :]
+    dataset = dataset[0:num_images, :, :]
     return dataset
 
-def load_single_image(image_path):
-    image_data = (ndimage.imread(image_path, False, 'RGB').astype(float) -
+random.seed()
+
+def load_single_image(image_path, white):
+    image_data = (ndimage.imread(image_path, True).astype(float) -
               pixel_depth / 2) / pixel_depth
+    if (white == 1):
+        image_data.fill(random.random()*120.0 + 120.0)
+    else:
+        image_data.fill(random.random()*120.0)
+    image_data = (image_data - pixel_depth/2 ) / pixel_depth
     return image_data
 
-image_dataset_teal = load_image_folder(image_folder_teal)
-image_dataset_red = load_image_folder(image_folder_red)
-image_dataset_dirt = load_image_folder(image_folder_dirt)
+image_dataset_teal = load_image_folder(image_folder_teal, 0)
+image_dataset_dirt = load_image_folder(image_folder_dirt, 1)
 
 np.random.shuffle(image_dataset_teal)
-np.random.shuffle(image_dataset_red)
 np.random.shuffle(image_dataset_dirt)
 
 def make_arrays(nb_rows, img_size):
   if nb_rows:
-    dataset = np.ndarray((nb_rows, img_size, img_size, 3), dtype=np.float32)
+    dataset = np.ndarray((nb_rows, img_size, img_size), dtype=np.float32)
     labels = np.ndarray(nb_rows, dtype=np.int32)
   else:
     dataset, labels = None, None
   return dataset, labels
 
-train_dataset, train_labels = make_arrays(3 * num_train_per_set, image_size)
-valid_dataset, valid_labels = make_arrays(3 * num_valid_per_set, image_size)
-test_dataset, test_labels = make_arrays(3* num_test_per_set, image_size)
+train_dataset, train_labels = make_arrays(2 * num_train_per_set, image_size)
+valid_dataset, valid_labels = make_arrays(2 * num_valid_per_set, image_size)
+test_dataset, test_labels = make_arrays(2* num_test_per_set, image_size)
 
 def add_labels(label_array, num_classes, num_per_class_per_set):
     label_array[0:num_per_class_per_set] = 0
     label_array[num_per_class_per_set:2*num_per_class_per_set] = 1
-    label_array[2*num_per_class_per_set:3*num_per_class_per_set] = 2
 
-add_labels(train_labels, 3, num_train_per_set)
-add_labels(valid_labels, 3, num_valid_per_set)
-add_labels(test_labels, 3, num_test_per_set)
+add_labels(train_labels, 2, num_train_per_set)
+add_labels(valid_labels, 2, num_valid_per_set)
+add_labels(test_labels, 2, num_test_per_set)
 
 train_dataset[0:num_train_per_set] = image_dataset_teal[0:num_train_per_set]
-train_dataset[num_train_per_set:2*num_train_per_set] = image_dataset_red[0:num_train_per_set]
-train_dataset[2*num_train_per_set:3*num_train_per_set] = image_dataset_dirt[0:num_train_per_set]
+train_dataset[num_train_per_set:2*num_train_per_set] = image_dataset_dirt[0:num_train_per_set]
 
 valid_dataset[0:num_valid_per_set] = image_dataset_teal[num_train_per_set:num_train_per_set + num_valid_per_set]
-valid_dataset[num_valid_per_set:2*num_valid_per_set] = image_dataset_red[num_train_per_set:num_train_per_set + num_valid_per_set]
-valid_dataset[2*num_valid_per_set:3*num_valid_per_set] = image_dataset_dirt[num_train_per_set:num_train_per_set + num_valid_per_set]
+valid_dataset[num_valid_per_set:2*num_valid_per_set] = image_dataset_dirt[num_train_per_set:num_train_per_set + num_valid_per_set]
 
 test_dataset[0:num_test_per_set] = image_dataset_teal[num_train_per_set + num_valid_per_set:num_train_per_set + num_valid_per_set + num_test_per_set]
-test_dataset[num_test_per_set:2*num_test_per_set] = image_dataset_red[num_train_per_set + num_valid_per_set:num_train_per_set + num_valid_per_set + num_test_per_set]
-test_dataset[2*num_test_per_set:3*num_test_per_set] = image_dataset_dirt[num_train_per_set + num_valid_per_set:num_train_per_set + num_valid_per_set + num_test_per_set]
+test_dataset[num_test_per_set:2*num_test_per_set] = image_dataset_dirt[num_train_per_set + num_valid_per_set:num_train_per_set + num_valid_per_set + num_test_per_set]
 
 def randomize(dataset, labels):
   permutation = np.random.permutation(labels.shape[0])
-  shuffled_dataset = dataset[permutation,:,:,:]
+  shuffled_dataset = dataset[permutation,:,:]
   shuffled_labels = labels[permutation]
   return shuffled_dataset, shuffled_labels
 train_dataset, train_labels = randomize(train_dataset, train_labels)
@@ -106,9 +107,9 @@ def render_image_ascii(image_data):
     for i in range (0, 64):
         line = ''
         for j in range (0, 64):
-            if (image_data[i][j][0] > 0.15):
+            if (image_data[i][j] < -0.4):
                 line = line + ('/')
-            elif (image_data[i][j][1] < -0.45):
+            elif (image_data[i][j] > 0.45):
                 line = line + '#'
             else:
                 line = line + '.'
@@ -132,7 +133,7 @@ for i in range(0, 10):
     render_image_ascii(test_dataset[i])
     print(" ")
 
-pickle_file = os.path.join(data_root, 'scMarines.pickle')
+pickle_file = os.path.join(data_root, 'blackWhite.pickle')
 
 try:
   f = open(pickle_file, 'wb')
