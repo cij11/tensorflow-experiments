@@ -61,6 +61,12 @@ with graph.as_default():
   tf_valid_dataset = tf.constant(valid_dataset)
   tf_test_dataset = tf.constant(test_dataset)
 
+  # Load single images to evaluate here
+ # tf_single_dataset =  tf.placeholder(
+#    tf.float32, shape=(1, image_size, image_size, num_channels))
+
+  tf_single_dataset = tf.constant(test_dataset[0:1])
+
   # Variables.
   layer1_weights = tf.Variable(tf.truncated_normal(
       [patch_size, patch_size, num_channels, depth], stddev=0.1))
@@ -101,10 +107,14 @@ with graph.as_default():
   valid_prediction = tf.nn.softmax(model(tf_valid_dataset))
   test_prediction = tf.nn.softmax(model(tf_test_dataset))
 
-num_steps = 2000
+  single_image_prediction = tf.nn.softmax(model(tf_single_dataset))
+
+num_steps = 200
+
 
 with tf.Session(graph=graph) as session:
   tf.initialize_all_variables().run()
+  saver = tf.train.Saver()
   print('Initialized')
   for step in range(num_steps):
     offset = (step * batch_size) % (train_labels.shape[0] - batch_size)
@@ -119,3 +129,7 @@ with tf.Session(graph=graph) as session:
       print('Validation accuracy: %.1f%%' % accuracy(
         valid_prediction.eval(), valid_labels))
   print('Test accuracy: %.1f%%' % accuracy(test_prediction.eval(), test_labels))
+#  tf_single_image = test_dataset[0:1, :, :, :]
+  print (test_labels[0])
+  print(single_image_prediction.eval())
+  saver.save(session, 'color_cropped_3_model')
