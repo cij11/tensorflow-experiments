@@ -1,0 +1,2 @@
+model_checkpoint_path: "color_cropped_3_model"
+all_model_checkpoint_paths: "color_cropped_3_model"
